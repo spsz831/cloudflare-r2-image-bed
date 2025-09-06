@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YangZhen 图床 - 专业图片托管服务</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📸</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="brand-section">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <img src="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3e%3cdefs%3e%3clinearGradient id='leafGradient' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3e%3cstop offset='0%25' style='stop-color:%2334D399'/%3e%3cstop offset='50%25' style='stop-color:%2310B981'/%3e%3cstop offset='100%25' style='stop-color:%23059669'/%3e%3c/linearGradient%3e%3c/defs%3e%3cpath d='M20 50 Q30 20 50 30 Q70 20 80 50 Q70 80 50 70 Q30 80 20 50 Z' fill='url(%23leafGradient)'/%3e%3cpath d='M35 45 Q45 35 55 45 Q65 35 70 45 Q65 55 55 50 Q45 55 35 45 Z' fill='%2365F3CC' opacity='0.7'/%3e%3c/svg%3e" alt="YangZhen Logo" />
+                    </div>
+                    <div class="logo-text">
+                        <h1>YangZhen</h1>
+                        <span class="logo-subtitle">图床服务</span>
+                    </div>
+                </div>
+                <p class="brand-tagline">高效 · 安全 · 专业的图片托管解决方案</p>
+            </div>
+            <div class="auth-status" id="authStatus">
+                <button class="logout-btn" id="logoutBtn" style="display: none;">退出登录</button>
+            </div>
+        </header>
+
+        <!-- 登录模态框 -->
+        <div class="login-modal" id="loginModal">
+            <div class="login-backdrop"></div>
+            <div class="login-content">
+                <div class="login-header">
+                    <div class="login-logo">
+                        <span class="login-icon">🔐</span>
+                        <h3>YangZhen 图床</h3>
+                    </div>
+                    <p class="login-description">请输入访问密码以继续使用服务</p>
+                </div>
+                <form id="loginForm">
+                    <div class="input-group">
+                        <input type="text" id="usernameInput" placeholder="用户名 (可选，留空使用单密码模式)" autocomplete="username">
+                        <input type="password" id="passwordInput" placeholder="输入访问密码" required autocomplete="current-password">
+                        <button type="submit" id="loginSubmit">
+                            <span class="btn-text">登录</span>
+                        </button>
+                    </div>
+                    <div class="login-message" id="loginMessage"></div>
+                </form>
+            </div>
+        </div>
+
+        <main class="main">
+            <!-- 功能介绍 -->
+            <div class="features-section">
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <span class="feature-icon">⚡</span>
+                        <h4>极速上传</h4>
+                        <p>全球CDN加速</p>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">🔒</span>
+                        <h4>安全可靠</h4>
+                        <p>企业级安全保障</p>
+                    </div>
+                    <div class="feature-item">
+                        <span class="feature-icon">📱</span>
+                        <h4>多端适配</h4>
+                        <p>完美适配各种设备</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 上传区域 -->
+            <div class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-content">
+                        <div class="upload-icon">📁</div>
+                        <h3 class="upload-title">上传您的图片</h3>
+                        <p class="upload-description">拖拽图片到此处，或者<span class="upload-btn" id="uploadBtn">点击选择文件</span></p>
+                        <div class="upload-specs">
+                            <span>支持 JPG、PNG、GIF、WebP、SVG</span>
+                            <span>最大 50MB</span>
+                        </div>
+                    </div>
+                    <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+                    <div class="upload-progress" id="uploadProgress" style="display: none;">
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <p class="progress-text" id="progressText">正在上传...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 上传结果 -->
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <div class="results-header">
+                    <h3>✅ 上传成功</h3>
+                    <p>您的图片已成功上传并可公开访问</p>
+                </div>
+                <div class="result-item" id="resultItem">
+                    <div class="image-preview">
+                        <img id="previewImg" alt="预览图片">
+                        <div class="image-info" id="imageInfo"></div>
+                    </div>
+                    <div class="link-section">
+                        <div class="link-group">
+                            <label>🔗 直链地址</label>
+                            <div class="input-copy">
+                                <input type="text" id="directLink" readonly>
+                                <button class="copy-btn" onclick="copyText('directLink')">复制</button>
+                            </div>
+                        </div>
+                        <div class="link-group">
+                            <label>📝 Markdown 格式</label>
+                            <div class="input-copy">
+                                <input type="text" id="markdownLink" readonly>
+                                <button class="copy-btn" onclick="copyText('markdownLink')">复制</button>
+                            </div>
+                        </div>
+                        <div class="link-group">
+                            <label>🌐 HTML 格式</label>
+                            <div class="input-copy">
+                                <input type="text" id="htmlLink" readonly>
+                                <button class="copy-btn" onclick="copyText('htmlLink')">复制</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 上传历史 -->
+            <div class="history-section">
+                <div class="section-header">
+                    <h3>📋 上传历史</h3>
+                    <p>管理您最近上传的图片</p>
+                </div>
+                <div class="history-list" id="historyList">
+                    <div class="empty-history">
+                        <div class="empty-icon">📷</div>
+                        <p>暂无上传记录</p>
+                        <span>上传您的第一张图片开始使用服务</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <span class="footer-logo">📸</span>
+                    <div class="footer-info">
+                        <p class="copyright">© 2024 YangZhen. All rights reserved.</p>
+                        <p class="tech-info">Powered by Cloudflare R2 + Workers</p>
+                    </div>
+                </div>
+                <div class="footer-links">
+                    <a href="#" class="footer-link">服务条款</a>
+                    <a href="#" class="footer-link">隐私政策</a>
+                    <a href="#" class="footer-link">技术支持</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

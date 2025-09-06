@@ -1,0 +1,962 @@
+/* Apple 风格 CSS - YangZhen 图床 */
+
+/* 全局重置和基础样式 */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.47059;
+  font-weight: 400;
+  letter-spacing: -0.022em;
+  color: #1d1d1f;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Apple 风格头部 */
+.header {
+  padding: 60px 0 80px 0;
+  text-align: center;
+  position: relative;
+}
+
+.brand-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.logo-icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(16, 185, 129, 0.3));
+}
+
+.logo-text h1 {
+  font-size: 3.5rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: #1d1d1f;
+  margin: 0;
+  background: linear-gradient(135deg, #34D399 0%, #10B981 50%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.logo-subtitle {
+  font-size: 1.125rem;
+  color: #10B981;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+.brand-tagline {
+  font-size: 1.25rem;
+  color: #86868b;
+  font-weight: 400;
+  letter-spacing: 0.007em;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.auth-status {
+  position: absolute;
+  top: 20px;
+  right: 0;
+}
+
+.logout-btn {
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.8);
+  color: #1d1d1f;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(20px);
+}
+
+.logout-btn:hover {
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Apple 风格登录模态框 */
+.login-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.login-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
+}
+
+.login-content {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(40px);
+  padding: 48px 40px;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 420px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+  z-index: 1001;
+}
+
+.login-header {
+  margin-bottom: 32px;
+}
+
+.login-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.login-icon {
+  font-size: 3rem;
+  opacity: 0.8;
+}
+
+.login-content h3 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0;
+}
+
+.login-description {
+  font-size: 1.0625rem;
+  color: #86868b;
+  margin: 0;
+  font-weight: 400;
+}
+
+.input-group {
+  margin-bottom: 24px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 16px 20px;
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  font-size: 1.0625rem;
+  background: rgba(255, 255, 255, 0.9);
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: #10B981;
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+}
+
+.input-group button {
+  width: 100%;
+  padding: 16px 20px;
+  background: #10B981;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.input-group button:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+}
+
+.input-group button:disabled {
+  background: #d1d1d6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.login-message {
+  font-size: 0.9375rem;
+  min-height: 20px;
+  font-weight: 500;
+}
+
+.login-message.error {
+  color: #ff3b30;
+}
+
+.login-message.success {
+  color: #34c759;
+}
+
+/* Apple 风格主体区域 */
+.main {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 24px;
+  padding: 60px;
+  margin-bottom: 60px;
+  backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+}
+
+/* 功能介绍区域 - 完全隐藏 */
+.features-section {
+  display: none;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.feature-item {
+  text-align: center;
+  padding: 20px 16px;
+  background: rgba(247, 247, 247, 0.3);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.02);
+}
+
+.feature-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.feature-icon {
+  font-size: 2rem;
+  margin-bottom: 12px;
+  display: block;
+  opacity: 0.7;
+}
+
+.feature-item h4 {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #86868b;
+  margin-bottom: 6px;
+}
+
+.feature-item p {
+  font-size: 0.9375rem;
+  color: #a1a1a6;
+  margin: 0;
+}
+
+/* Apple 风格上传区域 */
+.upload-section {
+  margin-bottom: 60px;
+}
+
+.upload-area {
+  border: 2px dashed rgba(0, 0, 0, 0.1);
+  border-radius: 24px;
+  padding: 80px 40px;
+  text-align: center;
+  background: rgba(247, 247, 247, 0.5);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-area::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.03) 0%, rgba(52, 211, 153, 0.03) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.upload-area:hover::before,
+.upload-area.dragover::before {
+  opacity: 1;
+}
+
+.upload-area:hover {
+  border-color: #10B981;
+  transform: translateY(-4px);
+  box-shadow: 0 20px 60px rgba(16, 185, 129, 0.15);
+}
+
+.upload-area.dragover {
+  border-color: #10B981;
+  transform: scale(1.02);
+  box-shadow: 0 20px 60px rgba(16, 185, 129, 0.2);
+}
+
+.upload-content {
+  position: relative;
+  z-index: 2;
+}
+
+.upload-icon {
+  font-size: 4rem;
+  margin-bottom: 24px;
+  opacity: 0.7;
+}
+
+.upload-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin-bottom: 12px;
+}
+
+.upload-description {
+  font-size: 1.1875rem;
+  color: #1d1d1f;
+  margin-bottom: 20px;
+}
+
+.upload-btn {
+  color: #10B981;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.upload-btn:hover {
+  color: #059669;
+}
+
+.upload-specs {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.upload-specs span {
+  font-size: 0.9375rem;
+  color: #86868b;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Apple 风格进度条 */
+.upload-progress {
+  margin-top: 40px;
+}
+
+.progress-container {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10B981, #34D399);
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 1rem;
+  color: #86868b;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Apple 风格结果区域 */
+.results-section {
+  margin-bottom: 60px;
+  padding: 40px;
+  background: rgba(52, 199, 89, 0.05);
+  border-radius: 20px;
+  border: 1px solid rgba(52, 199, 89, 0.1);
+}
+
+.results-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.results-header h3 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin-bottom: 8px;
+}
+
+.results-header p {
+  font-size: 1.0625rem;
+  color: #86868b;
+  margin: 0;
+}
+
+.result-item {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+}
+
+.image-preview {
+  flex-shrink: 0;
+}
+
+.image-preview img {
+  max-width: 240px;
+  max-height: 240px;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  object-fit: cover;
+}
+
+.image-info {
+  margin-top: 12px;
+  font-size: 0.875rem;
+  color: #86868b;
+  text-align: center;
+}
+
+.link-section {
+  flex: 1;
+}
+
+.link-group {
+  margin-bottom: 24px;
+}
+
+.link-group label {
+  display: block;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin-bottom: 8px;
+  font-size: 1rem;
+}
+
+.input-copy {
+  display: flex;
+  gap: 8px;
+}
+
+.input-copy input {
+  flex: 1;
+  padding: 14px 16px;
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  font-size: 0.9375rem;
+  background: rgba(255, 255, 255, 0.9);
+  color: #1d1d1f;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+}
+
+.input-copy input:focus {
+  outline: none;
+  border-color: #10B981;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+}
+
+.copy-btn {
+  padding: 14px 20px;
+  background: #10B981;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  font-size: 0.9375rem;
+  white-space: nowrap;
+}
+
+.copy-btn:hover {
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+}
+
+.copy-btn.copied {
+  background: #34c759;
+}
+
+/* 历史记录区域 */
+.history-section {
+  margin-bottom: 40px;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.section-header h3 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin-bottom: 8px;
+}
+
+.section-header p {
+  font-size: 1.0625rem;
+  color: #86868b;
+  margin: 0;
+}
+
+.history-list {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.empty-history {
+  text-align: center;
+  padding: 60px 20px;
+  color: #86868b;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.empty-history p {
+  font-size: 1.25rem;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: #1d1d1f;
+}
+
+.empty-history span {
+  font-size: 1rem;
+  color: #86868b;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 16px;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.history-item:hover {
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+}
+
+.history-thumbnail {
+  width: 70px;
+  height: 70px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.history-info {
+  flex: 1;
+}
+
+.history-info h4 {
+  font-size: 1.0625rem;
+  font-weight: 500;
+  color: #1d1d1f;
+  margin-bottom: 4px;
+}
+
+.history-info p {
+  font-size: 0.9375rem;
+  color: #86868b;
+  margin: 0;
+}
+
+.history-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.copy-options {
+  display: flex;
+  gap: 6px;
+}
+
+.history-actions button {
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.copy-link-btn {
+  background: #10B981;
+  color: white;
+  padding: 6px 10px;
+  font-size: 0.6875rem;
+}
+
+.copy-link-btn.markdown {
+  background: #34c759;
+}
+
+.copy-link-btn.html {
+  background: #ff9500;
+}
+
+.copy-link-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.copy-link-btn.direct:hover {
+  background: #059669;
+}
+
+.copy-link-btn.markdown:hover {
+  background: #248a3d;
+}
+
+.copy-link-btn.html:hover {
+  background: #cc7700;
+}
+
+.delete-btn {
+  background: #ff3b30;
+  color: white;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+}
+
+.delete-btn:hover {
+  background: #d70015;
+  transform: translateY(-1px);
+}
+
+/* Apple 风格页脚 */
+.footer {
+  text-align: center;
+  padding: 40px 0 60px 0;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.footer-logo {
+  font-size: 1.5rem;
+}
+
+.footer-info {
+  text-align: left;
+}
+
+.copyright {
+  font-size: 0.9375rem;
+  color: #1d1d1f;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.tech-info {
+  font-size: 0.875rem;
+  color: #86868b;
+  margin: 0;
+}
+
+.footer-links {
+  display: flex;
+  gap: 24px;
+}
+
+.footer-link {
+  color: #86868b;
+  text-decoration: none;
+  font-size: 0.9375rem;
+  transition: color 0.2s ease;
+}
+
+.footer-link:hover {
+  color: #10B981;
+}
+
+/* Apple 风格提示消息 */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 16px 24px;
+  background: rgba(0, 0, 0, 0.88);
+  color: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  backdrop-filter: blur(40px);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  animation: slideIn 0.3s ease;
+}
+
+.toast.error {
+  background: rgba(255, 59, 48, 0.9);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+  }
+  
+  .main {
+    padding: 40px 24px;
+  }
+  
+  .logo {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .logo-text h1 {
+    font-size: 2.5rem;
+  }
+  
+  .brand-tagline {
+    font-size: 1.125rem;
+  }
+  
+  .result-item {
+    flex-direction: column;
+    gap: 24px;
+  }
+  
+  .image-preview {
+    text-align: center;
+  }
+  
+  .input-copy {
+    flex-direction: column;
+  }
+  
+  .upload-area {
+    padding: 60px 24px;
+  }
+  
+  .upload-specs {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .history-item {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+  }
+  
+  .history-actions {
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .copy-options {
+    gap: 8px;
+  }
+  
+  .login-content {
+    padding: 40px 24px;
+    margin: 0 16px;
+  }
+  
+  .auth-status {
+    position: static;
+    margin-top: 20px;
+  }
+  
+  .footer-content {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .footer-brand {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .footer-info {
+    text-align: center;
+  }
+  
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Apple 风格动画 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.6s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%) translateY(-50%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Apple 风格滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Apple 风格选中文本 */
+::selection {
+  background: rgba(16, 185, 129, 0.2);
+  color: #1d1d1f;
+}
+
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+  body {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: #f5f5f7;
+  }
+  
+  .main {
+    background: rgba(28, 28, 30, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .login-content {
+    background: rgba(28, 28, 30, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .feature-item {
+    background: rgba(44, 44, 46, 0.6);
+  }
+  
+  .upload-area {
+    background: rgba(44, 44, 46, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .logout-btn {
+    background: rgba(28, 28, 30, 0.8);
+    color: #f5f5f7;
+  }
+}

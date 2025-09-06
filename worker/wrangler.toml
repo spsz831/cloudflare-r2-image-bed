@@ -1,0 +1,15 @@
+name = "image-bed-worker"
+main = "src/index.js"
+compatibility_date = "2023-12-01"
+workers_dev = true
+
+# R2存储桶绑定
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "image-bed"
+
+# 环境变量
+[vars]
+MAX_FILE_SIZE = "50"  # MB
+ALLOWED_ORIGINS = "*"
+UPLOAD_PASSWORD = "yang"  # 登录密码

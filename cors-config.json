@@ -1,0 +1,23 @@
+{
+  "rules": [
+    {
+      "allowedOrigins": ["*"],
+      "allowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
+      "allowedHeaders": [
+        "Accept",
+        "Accept-Language", 
+        "Content-Language",
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With"
+      ],
+      "exposeHeaders": [
+        "Content-Length",
+        "Content-Type",
+        "Last-Modified",
+        "ETag"
+      ],
+      "maxAgeSeconds": 3600
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "cloudflare-r2-image-bed",
+  "version": "1.0.0",
+  "description": "Cloudflare R2图床后端API",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20231218.0"
+  }
+}
