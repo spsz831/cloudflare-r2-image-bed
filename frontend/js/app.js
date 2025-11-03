@@ -1,15 +1,30 @@
 /**
- * 前端JavaScript功能实现
- * 包含文件上传、拖拽、预览、链接复制、历史记录等功能
+ * YangZhen 图床前端功能实现
+ * 功能包含:
+ * - 文件上传与预览
+ * - 拖拽上传支持
+ * - 多种链接格式复制
+ * - 本地历史记录管理
+ * - 自动重试与错误处理
+ * @version 2.0.0
+ * @author YangZhen
  */
 
 class ImageBed {
   constructor() {
-    // 使用EdgeOne加速域名，提供中国区域快速访问
+    // API配置
     this.apiBaseUrl = 'https://api.yz-image.com'; // EdgeOne加速API域名
     this.fallbackApiUrl = 'https://image-bed-worker.yangzhen0806.workers.dev'; // 备用原始域名
+
+    // 文件限制配置
     this.maxFileSize = 50 * 1024 * 1024; // 50MB
     this.supportedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    this.maxRetries = 3; // 最大重试次数
+    this.retryDelay = 1000; // 重试延迟(ms)
+
+    // 状态管理
+    this.isUploading = false;
+    this.uploadQueue = [];
     
     this.elements = {
       uploadArea: document.getElementById('uploadArea'),
@@ -30,22 +45,65 @@ class ImageBed {
     this.loadUploadHistory();
   }
 
-  // 带容错的API请求方法
-  async makeApiRequest(url, options = {}) {
+  // 带容错和重试的API请求方法
+  async makeApiRequest(url, options = {}, retryCount = 0) {
+    const maxRetries = this.maxRetries;
+
     try {
       // 首先尝试EdgeOne加速域名
       const edgeOneUrl = url.replace(this.fallbackApiUrl, this.apiBaseUrl);
-      const response = await fetch(edgeOneUrl, options);
+      const response = await fetch(edgeOneUrl, {
+        ...options,
+        timeout: 30000 // 30秒超时
+      });
+
       if (response.ok) {
         return response;
       }
+
+      if (response.status >= 500 && retryCount < maxRetries) {
+        console.warn(`服务器错误 ${response.status}，${this.retryDelay}ms后重试...`);
+        await this.delay(this.retryDelay * (retryCount + 1));
+        return this.makeApiRequest(url, options, retryCount + 1);
+      }
+
       throw new Error(`EdgeOne API failed: ${response.status}`);
     } catch (error) {
+      if (retryCount < maxRetries && error.name === 'TypeError') {
+        console.warn(`网络错误，${this.retryDelay}ms后重试...`);
+        await this.delay(this.retryDelay * (retryCount + 1));
+        return this.makeApiRequest(url, options, retryCount + 1);
+      }
+
       console.warn('EdgeOne API失败，尝试备用域名:', error.message);
       // 如果EdgeOne失败，使用原始域名
       const fallbackUrl = url.replace(this.apiBaseUrl, this.fallbackApiUrl);
-      return fetch(fallbackUrl, options);
+
+      try {
+        const response = await fetch(fallbackUrl, options);
+        if (response.ok || retryCount >= maxRetries) {
+          return response;
+        }
+
+        if (retryCount < maxRetries) {
+          await this.delay(this.retryDelay * (retryCount + 1));
+          return this.makeApiRequest(url, options, retryCount + 1);
+        }
+
+        return response;
+      } catch (fallbackError) {
+        if (retryCount < maxRetries) {
+          await this.delay(this.retryDelay * (retryCount + 1));
+          return this.makeApiRequest(url, options, retryCount + 1);
+        }
+        throw fallbackError;
+      }
     }
+  }
+
+  // 延迟工具函数
+  delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   // 初始化事件监听器
@@ -105,19 +163,43 @@ class ImageBed {
   async handleFileSelect(files) {
     if (!files || files.length === 0) return;
 
-    const imageFiles = Array.from(files).filter(file => 
-      this.supportedTypes.includes(file.type)
-    );
-
-    if (imageFiles.length === 0) {
-      this.showToast('请选择有效的图片文件', 'error');
+    // 防止重复上传
+    if (this.isUploading) {
+      this.showToast('正在上传中，请稍候...', 'warning');
       return;
     }
 
-    if (imageFiles.length === 1) {
-      await this.uploadSingleFile(imageFiles[0]);
-    } else {
-      await this.uploadMultipleFiles(imageFiles);
+    const imageFiles = Array.from(files).filter(file => {
+      // 检查文件类型
+      if (!this.supportedTypes.includes(file.type)) {
+        this.showToast(`不支持的文件类型: ${file.name}`, 'error');
+        return false;
+      }
+
+      // 检查文件大小
+      if (file.size > this.maxFileSize) {
+        const sizeMB = Math.round(file.size / 1024 / 1024);
+        this.showToast(`文件过大: ${file.name} (${sizeMB}MB)，限制50MB`, 'error');
+        return false;
+      }
+
+      return true;
+    });
+
+    if (imageFiles.length === 0) {
+      return;
+    }
+
+    this.isUploading = true;
+
+    try {
+      if (imageFiles.length === 1) {
+        await this.uploadSingleFile(imageFiles[0]);
+      } else {
+        await this.uploadMultipleFiles(imageFiles);
+      }
+    } finally {
+      this.isUploading = false;
     }
   }
 
@@ -202,18 +284,29 @@ class ImageBed {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await this.makeApiRequest(`${this.apiBaseUrl}/api/upload`, {
-      method: 'POST',
-      body: formData
-    });
+    try {
+      const response = await this.makeApiRequest(`${this.apiBaseUrl}/api/upload`, {
+        method: 'POST',
+        body: formData
+      });
 
-    const result = await response.json();
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
+        }
+        throw new Error(errorData.error || '上传失败');
+      }
 
-    if (!response.ok) {
-      throw new Error(result.error || '上传失败');
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('上传失败:', error);
+      throw new Error(`上传失败: ${error.message}`);
     }
-
-    return result;
   }
 
   // 显示上传进度
@@ -303,38 +396,88 @@ class ImageBed {
       return;
     }
 
-    container.innerHTML = history.map(item => `
+    const historyHeader = `
+      <div class="history-header">
+        <div class="history-stats">
+          <span>共 ${history.length} 张图片</span>
+          <span>总大小 ${this.formatFileSize(history.reduce((sum, item) => sum + (item.fileSize || 0), 0))}</span>
+        </div>
+        <button class="clear-all-btn" onclick="imageBed.clearAllHistory()" title="清空所有记录">
+          🗑️ 清空全部
+        </button>
+      </div>
+    `;
+
+    const historyItems = history.map(item => `
       <div class="history-item" data-id="${item.id}">
-        <img src="${item.url}" alt="${item.fileName}" class="history-thumbnail" loading="lazy">
+        <img src="${item.url}" alt="${item.fileName}" class="history-thumbnail" loading="lazy" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjRjVGNUY1Ii8+CjxwYXRoIGQ9Ik0yMCAyOEMyNCAyOCAyOCAyNCAyOCAyMFMxNiAxMiAyMCAxMlMxMiAxNiAxMiAyMFMxNiAyOCAyMCAyOFoiIGZpbGw9IiNDQ0NDQ0MiLz4KPC9zdmc+'">
         <div class="history-info">
-          <h4>${item.fileName}</h4>
+          <h4 title="${item.fileName}">${this.truncateFileName(item.fileName)}</h4>
           <p>${this.formatFileSize(item.fileSize)} • ${this.formatDate(item.uploadTime)}</p>
         </div>
         <div class="history-actions">
           <div class="copy-options">
             <button class="copy-link-btn direct" onclick="imageBed.copyToClipboard('${item.url}')" title="复制直链">
-              🔗 直链
+              🔗
             </button>
-            <button class="copy-link-btn markdown" onclick="imageBed.copyToClipboard('![${item.fileName}](${item.url})')" title="复制Markdown格式">
-              📝 MD
+            <button class="copy-link-btn markdown" onclick="imageBed.copyToClipboard('![${item.fileName}](${item.url})')" title="复制Markdown">
+              📝
             </button>
-            <button class="copy-link-btn html" onclick="imageBed.copyToClipboard('<img src=&quot;${item.url}&quot; alt=&quot;${item.fileName}&quot; />')" title="复制HTML格式">
-              🌐 HTML
+            <button class="copy-link-btn html" onclick="imageBed.copyToClipboard('<img src=&quot;${item.url}&quot; alt=&quot;${item.fileName}&quot; />')" title="复制HTML">
+              🌐
+            </button>
+            <button class="copy-link-btn" onclick="window.open('${item.url}', '_blank')" title="预览图片">
+              👁️
             </button>
           </div>
-          <button class="delete-btn" onclick="imageBed.deleteFromHistory('${item.id}')">删除</button>
+          <button class="delete-btn" onclick="imageBed.deleteFromHistory('${item.id}')" title="删除记录">
+            🗑️
+          </button>
         </div>
       </div>
     `).join('');
+
+    container.innerHTML = historyHeader + historyItems;
+  }
+
+  // 截断文件名
+  truncateFileName(fileName, maxLength = 20) {
+    if (fileName.length <= maxLength) return fileName;
+    const ext = fileName.split('.').pop();
+    const name = fileName.substring(0, fileName.lastIndexOf('.'));
+    const maxNameLength = maxLength - ext.length - 4; // 4 for '...' and '.'
+    return name.substring(0, maxNameLength) + '...' + '.' + ext;
   }
 
   // 从历史记录中删除
   deleteFromHistory(fileId) {
+    if (!confirm('确定要从历史记录中删除这张图片吗？')) {
+      return;
+    }
+
     let history = this.getUploadHistory();
+    const item = history.find(h => h.id === fileId);
+
+    if (!item) {
+      this.showToast('记录不存在', 'error');
+      return;
+    }
+
     history = history.filter(item => item.id !== fileId);
     localStorage.setItem('uploadHistory', JSON.stringify(history));
     this.renderHistory();
-    this.showToast('已从历史记录中删除');
+    this.showToast(`已删除 ${item.fileName}`);
+  }
+
+  // 清空所有历史记录
+  clearAllHistory() {
+    if (!confirm('确定要清空所有历史记录吗？此操作不可撤销。')) {
+      return;
+    }
+
+    localStorage.removeItem('uploadHistory');
+    this.renderHistory();
+    this.showToast('已清空所有历史记录');
   }
 
   // 格式化文件大小
@@ -405,15 +548,39 @@ class ImageBed {
 
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    toast.textContent = message;
+
+    // 添加图标
+    const icon = this.getToastIcon(type);
+    toast.innerHTML = `
+      <span class="toast-icon">${icon}</span>
+      <span class="toast-message">${message}</span>
+    `;
+
     document.body.appendChild(toast);
 
-    // 3秒后自动移除
+    // 添加显示动画
+    setTimeout(() => toast.classList.add('show'), 10);
+
+    // 根据类型设置不同的持续时间
+    const duration = type === 'error' ? 5000 : 3000;
+
     setTimeout(() => {
       if (toast.parentNode) {
-        toast.remove();
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
       }
-    }, 3000);
+    }, duration);
+  }
+
+  // 获取Toast图标
+  getToastIcon(type) {
+    const icons = {
+      success: '✅',
+      error: '❌',
+      warning: '⚠️',
+      info: 'ℹ️'
+    };
+    return icons[type] || '📝';
   }
 }
 

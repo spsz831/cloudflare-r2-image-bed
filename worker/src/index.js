@@ -1,15 +1,69 @@
 /**
- * Cloudflare R2图床后端API
- * 支持文件上传、获取、删除和列表功能
+ * YangZhen 图床Cloudflare R2 + Workers 后端API
+ * 功能包含:
+ * - 文件上传、获取、删除、列表
+ * - 自动错误处理和日志记录
+ * - 性能优化和缓存管理
+ * - 安全限制和频率控制
+ * @version 2.0.0
+ * @author YangZhen
  */
 
-// CORS响应头
+// CORS响应头配置
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Upload-Token',
   'Access-Control-Max-Age': '86400',
 };
+
+// 支持的图片类型
+const SUPPORTED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/svg+xml'
+];
+
+// 文件扩展名映射
+const FILE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
+
+// 缓存策略
+const CACHE_CONTROL = {
+  IMAGE: 'public, max-age=31536000, immutable', // 1年
+  ERROR: 'no-cache, no-store, must-revalidate'
+};
+
+// 错误码定义
+const ERROR_CODES = {
+  INVALID_FILE: 'INVALID_FILE',
+  FILE_TOO_LARGE: 'FILE_TOO_LARGE',
+  UNSUPPORTED_TYPE: 'UNSUPPORTED_TYPE',
+  UPLOAD_FAILED: 'UPLOAD_FAILED',
+  FILE_NOT_FOUND: 'FILE_NOT_FOUND',
+  INTERNAL_ERROR: 'INTERNAL_ERROR'
+};
+
+// 日志等级
+const LOG_LEVELS = {
+  ERROR: 0,
+  WARN: 1,
+  INFO: 2,
+  DEBUG: 3
+};
+
+// 日志输出函数
+function log(level, message, data = {}) {
+  const timestamp = new Date().toISOString();
+  const logEntry = {
+    timestamp,
+    level: Object.keys(LOG_LEVELS)[level],
+    message,
+    ...data
+  };
+  console.log(JSON.stringify(logEntry));
+}
 
 // 支持多用户的用户列表
 function getValidUsers(env) {
@@ -95,10 +149,11 @@ function generateAccessToken(username, password, env) {
   return { success: false, error: '用户名或密码错误' };
 }
 
-// 生成唯一文件ID
+// 生成优化的文件ID
 function generateFileId() {
   const timestamp = Date.now().toString(36);
-  const randomStr = Math.random().toString(36).substring(2, 8);
+  const randomStr = crypto.getRandomValues(new Uint8Array(6))
+    .reduce((str, byte) => str + byte.toString(36), '');
   return `${timestamp}-${randomStr}`;
 }
 
@@ -109,8 +164,65 @@ function getFileExtension(filename) {
 
 // 检查是否为支持的图片格式
 function isValidImageType(contentType) {
-  const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
-  return validTypes.includes(contentType);
+  return SUPPORTED_IMAGE_TYPES.includes(contentType);
+}
+
+// 创建错误响应
+function createErrorResponse(errorCode, message, statusCode = 400, details = {}) {
+  const errorResponse = {
+    success: false,
+    error: message,
+    code: errorCode,
+    timestamp: new Date().toISOString(),
+    ...details
+  };
+
+  log(LOG_LEVELS.ERROR, message, { errorCode, statusCode, ...details });
+
+  return new Response(JSON.stringify(errorResponse), {
+    status: statusCode,
+    headers: {
+      ...corsHeaders,
+      'Content-Type': 'application/json',
+      'Cache-Control': CACHE_CONTROL.ERROR
+    },
+  });
+}
+
+// 创建成功响应
+function createSuccessResponse(data, statusCode = 200) {
+  const response = {
+    success: true,
+    timestamp: new Date().toISOString(),
+    ...data
+  };
+
+  return new Response(JSON.stringify(response), {
+    status: statusCode,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+// 获取客户端IP地址
+function getClientIP(request) {
+  return request.headers.get('CF-Connecting-IP') ||
+         request.headers.get('X-Forwarded-For') ||
+         request.headers.get('X-Real-IP') ||
+         'unknown';
+}
+
+// 验证文件大小
+function validateFileSize(size, maxSize) {
+  return size <= maxSize;
+}
+
+// 格式化文件大小
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
 // 处理CORS预检请求
@@ -123,32 +235,44 @@ function handleOptions() {
 
 // 文件上传接口
 async function handleUpload(request, env) {
+  const startTime = Date.now();
+  const clientIP = getClientIP(request);
+
   try {
+    log(LOG_LEVELS.INFO, '开始处理上传请求', { clientIP });
+
     const formData = await request.formData();
     const file = formData.get('file');
 
+    // 验证文件存在
     if (!file || !file.name) {
-      return new Response(JSON.stringify({ error: '请选择要上传的文件' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return createErrorResponse(
+        ERROR_CODES.INVALID_FILE,
+        '请选择要上传的文件',
+        400,
+        { clientIP }
+      );
     }
 
-    // 检查文件类型
+    // 验证文件类型
     if (!isValidImageType(file.type)) {
-      return new Response(JSON.stringify({ error: '不支持的文件类型，请上传图片文件' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return createErrorResponse(
+        ERROR_CODES.UNSUPPORTED_TYPE,
+        `不支持的文件类型: ${file.type}，请上传图片文件`,
+        400,
+        { clientIP, fileType: file.type, fileName: file.name }
+      );
     }
 
-    // 检查文件大小
-    const maxSize = (env.MAX_FILE_SIZE || 50) * 1024 * 1024; // MB转换为字节
-    if (file.size > maxSize) {
-      return new Response(JSON.stringify({ error: `文件大小超过限制 ${env.MAX_FILE_SIZE || 50}MB` }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    // 验证文件大小
+    const maxSize = (env.MAX_FILE_SIZE || 50) * 1024 * 1024;
+    if (!validateFileSize(file.size, maxSize)) {
+      return createErrorResponse(
+        ERROR_CODES.FILE_TOO_LARGE,
+        `文件大小超过限制: ${formatFileSize(file.size)}, 最大允许: ${formatFileSize(maxSize)}`,
+        400,
+        { clientIP, fileSize: file.size, maxSize, fileName: file.name }
+      );
     }
 
     // 生成文件ID和存储路径
@@ -156,53 +280,89 @@ async function handleUpload(request, env) {
     const fileExt = getFileExtension(file.name);
     const fileName = `${fileId}${fileExt}`;
 
+    log(LOG_LEVELS.INFO, '开始上传文件到R2', {
+      clientIP,
+      fileId,
+      fileName: file.name,
+      fileSize: file.size,
+      contentType: file.type
+    });
+
     // 上传到R2
-    await env.R2_BUCKET.put(fileName, file.stream(), {
+    const uploadResult = await env.R2_BUCKET.put(fileName, file.stream(), {
       httpMetadata: {
         contentType: file.type,
+        cacheControl: CACHE_CONTROL.IMAGE,
       },
       customMetadata: {
         originalName: file.name,
         uploadTime: new Date().toISOString(),
         fileSize: file.size.toString(),
+        clientIP: clientIP,
+        userAgent: request.headers.get('User-Agent') || 'unknown'
       },
     });
 
+    if (!uploadResult) {
+      throw new Error('R2上传失败');
+    }
+
     // 构建返回URL
     const fileUrl = `${new URL(request.url).origin}/api/file/${fileId}`;
+    const uploadTime = new Date().toISOString();
+    const processingTime = Date.now() - startTime;
 
-    const response = {
-      success: true,
-      fileId: fileId,
+    const responseData = {
+      fileId,
       fileName: file.name,
       fileSize: file.size,
       contentType: file.type,
       url: fileUrl,
-      uploadTime: new Date().toISOString(),
+      uploadTime,
+      processingTime: `${processingTime}ms`
     };
 
-    return new Response(JSON.stringify(response), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    log(LOG_LEVELS.INFO, '文件上传成功', {
+      clientIP,
+      fileId,
+      fileName: file.name,
+      fileSize: file.size,
+      processingTime
     });
 
+    return createSuccessResponse(responseData);
+
   } catch (error) {
-    console.error('Upload error:', error);
-    return new Response(JSON.stringify({ error: '上传失败，请重试' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    const processingTime = Date.now() - startTime;
+
+    log(LOG_LEVELS.ERROR, '文件上传失败', {
+      clientIP,
+      error: error.message,
+      stack: error.stack,
+      processingTime
     });
+
+    return createErrorResponse(
+      ERROR_CODES.UPLOAD_FAILED,
+      '上传失败，请重试',
+      500,
+      { clientIP, processingTime: `${processingTime}ms` }
+    );
   }
 }
 
 // 文件获取接口
 async function handleGetFile(request, env, fileId) {
+  const clientIP = getClientIP(request);
+
   try {
+    log(LOG_LEVELS.INFO, '开始获取文件', { clientIP, fileId });
+
     // 查找文件（需要遍历可能的扩展名）
-    const extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
     let object = null;
     let fileName = null;
 
-    for (const ext of extensions) {
+    for (const ext of FILE_EXTENSIONS) {
       const testFileName = `${fileId}${ext}`;
       const testObject = await env.R2_BUCKET.get(testFileName);
       if (testObject) {
@@ -213,65 +373,112 @@ async function handleGetFile(request, env, fileId) {
     }
 
     if (!object) {
-      return new Response(JSON.stringify({ error: '文件不存在' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      log(LOG_LEVELS.WARN, '文件不存在', { clientIP, fileId });
+      return createErrorResponse(
+        ERROR_CODES.FILE_NOT_FOUND,
+        '文件不存在',
+        404,
+        { clientIP, fileId }
+      );
     }
+
+    // 记录成功访问
+    log(LOG_LEVELS.INFO, '文件获取成功', {
+      clientIP,
+      fileId,
+      fileName,
+      contentType: object.httpMetadata?.contentType,
+      size: object.size
+    });
 
     // 返回文件内容
     const headers = {
       ...corsHeaders,
-      'Content-Type': object.httpMetadata.contentType || 'application/octet-stream',
-      'Cache-Control': 'public, max-age=31536000',
+      'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+      'Cache-Control': CACHE_CONTROL.IMAGE,
       'Content-Disposition': `inline; filename="${object.customMetadata?.originalName || fileName}"`,
+      'ETag': object.etag,
+      'Last-Modified': object.uploaded?.toUTCString() || new Date().toUTCString(),
+      'Content-Length': object.size?.toString()
     };
 
     return new Response(object.body, { headers });
-    
+
   } catch (error) {
-    console.error('Get file error:', error);
-    return new Response(JSON.stringify({ error: '获取文件失败' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    log(LOG_LEVELS.ERROR, '获取文件失败', {
+      clientIP,
+      fileId,
+      error: error.message,
+      stack: error.stack
     });
+
+    return createErrorResponse(
+      ERROR_CODES.INTERNAL_ERROR,
+      '获取文件失败',
+      500,
+      { clientIP, fileId }
+    );
   }
 }
 
 // 文件删除接口
 async function handleDeleteFile(request, env, fileId) {
-  try {
-    // 查找并删除文件
-    const extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
-    let found = false;
+  const clientIP = getClientIP(request);
 
-    for (const ext of extensions) {
+  try {
+    log(LOG_LEVELS.INFO, '开始删除文件', { clientIP, fileId });
+
+    // 查找并删除文件
+    let found = false;
+    let deletedFileName = null;
+
+    for (const ext of FILE_EXTENSIONS) {
       const fileName = `${fileId}${ext}`;
       const object = await env.R2_BUCKET.get(fileName);
       if (object) {
         await env.R2_BUCKET.delete(fileName);
         found = true;
+        deletedFileName = fileName;
+        log(LOG_LEVELS.INFO, '文件删除成功', {
+          clientIP,
+          fileId,
+          fileName: deletedFileName,
+          originalName: object.customMetadata?.originalName
+        });
         break;
       }
     }
 
     if (!found) {
-      return new Response(JSON.stringify({ error: '文件不存在' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      log(LOG_LEVELS.WARN, '要删除的文件不存在', { clientIP, fileId });
+      return createErrorResponse(
+        ERROR_CODES.FILE_NOT_FOUND,
+        '文件不存在',
+        404,
+        { clientIP, fileId }
+      );
     }
 
-    return new Response(JSON.stringify({ success: true, message: '文件已删除' }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    return createSuccessResponse({
+      message: '文件已删除',
+      fileId,
+      fileName: deletedFileName
     });
 
   } catch (error) {
-    console.error('Delete file error:', error);
-    return new Response(JSON.stringify({ error: '删除文件失败' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    log(LOG_LEVELS.ERROR, '删除文件失败', {
+      clientIP,
+      fileId,
+      error: error.message,
+      stack: error.stack
     });
+
+    return createErrorResponse(
+      ERROR_CODES.INTERNAL_ERROR,
+      '删除文件失败',
+      500,
+      { clientIP, fileId }
+    );
   }
 }
 
