@@ -10,7 +10,6 @@ class ImageBed {
     this.fallbackApiUrl = 'https://image-bed-worker.yangzhen0806.workers.dev'; // 备用原始域名
     this.maxFileSize = 50 * 1024 * 1024; // 50MB
     this.supportedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
-    this.accessToken = localStorage.getItem('uploadToken');
     
     this.elements = {
       uploadArea: document.getElementById('uploadArea'),
@@ -24,17 +23,10 @@ class ImageBed {
       directLink: document.getElementById('directLink'),
       markdownLink: document.getElementById('markdownLink'),
       htmlLink: document.getElementById('htmlLink'),
-      historyList: document.getElementById('historyList'),
-      loginModal: document.getElementById('loginModal'),
-      loginForm: document.getElementById('loginForm'),
-      passwordInput: document.getElementById('passwordInput'),
-      usernameInput: document.getElementById('usernameInput'),
-      loginMessage: document.getElementById('loginMessage'),
-      logoutBtn: document.getElementById('logoutBtn')
+      historyList: document.getElementById('historyList')
     };
 
     this.initializeEventListeners();
-    this.checkAuthentication();
     this.loadUploadHistory();
   }
 
@@ -56,130 +48,8 @@ class ImageBed {
     }
   }
 
-  // 检查认证状态
-  async checkAuthentication() {
-    if (this.accessToken) {
-      try {
-        const response = await this.makeApiRequest(`${this.apiBaseUrl}/api/verify`, {
-          method: 'POST',
-          headers: {
-            'X-Upload-Token': this.accessToken
-          }
-        });
-        
-        const result = await response.json();
-        
-        if (result.valid) {
-          this.showMainInterface();
-        } else {
-          this.showLoginModal();
-        }
-      } catch (error) {
-        console.error('验证令牌失败:', error);
-        this.showLoginModal();
-      }
-    } else {
-      this.showLoginModal();
-    }
-  }
-
-  // 显示登录模态框
-  showLoginModal() {
-    this.elements.loginModal.style.display = 'flex';
-    this.elements.passwordInput.focus();
-  }
-
-  // 隐藏登录模态框
-  hideLoginModal() {
-    this.elements.loginModal.style.display = 'none';
-  }
-
-  // 显示主界面
-  showMainInterface() {
-    this.hideLoginModal();
-    this.elements.logoutBtn.style.display = 'block';
-  }
-
-  // 处理登录
-  async handleLogin(username, password) {
-    try {
-      const body = {};
-      if (username && username.trim()) {
-        body.username = username.trim();
-        body.password = password;
-      } else {
-        body.password = password;
-      }
-
-      const response = await this.makeApiRequest(`${this.apiBaseUrl}/api/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        this.accessToken = result.token;
-        localStorage.setItem('uploadToken', result.token);
-        const welcomeMsg = result.username ? `欢迎, ${result.username}!` : '登录成功！';
-        this.showLoginMessage(welcomeMsg, 'success');
-        setTimeout(() => this.showMainInterface(), 1000);
-        return true;
-      } else {
-        this.showLoginMessage(result.error || '登录失败', 'error');
-        return false;
-      }
-    } catch (error) {
-      console.error('登录失败:', error);
-      this.showLoginMessage('网络错误，请重试', 'error');
-      return false;
-    }
-  }
-
-  // 显示登录消息
-  showLoginMessage(message, type) {
-    this.elements.loginMessage.textContent = message;
-    this.elements.loginMessage.className = `login-message ${type}`;
-  }
-
-  // 退出登录
-  handleLogout() {
-    this.accessToken = null;
-    localStorage.removeItem('uploadToken');
-    this.elements.logoutBtn.style.display = 'none';
-    this.showLoginModal();
-    this.showToast('已退出登录');
-  }
-
   // 初始化事件监听器
   initializeEventListeners() {
-    // 登录表单提交
-    this.elements.loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const username = this.elements.usernameInput.value;
-      const password = this.elements.passwordInput.value;
-      if (password) {
-        const loginBtn = this.elements.loginForm.querySelector('button');
-        loginBtn.disabled = true;
-        loginBtn.textContent = '登录中...';
-        
-        await this.handleLogin(username, password);
-        
-        loginBtn.disabled = false;
-        loginBtn.textContent = '登录';
-        this.elements.usernameInput.value = '';
-        this.elements.passwordInput.value = '';
-      }
-    });
-
-    // 退出登录按钮
-    this.elements.logoutBtn.addEventListener('click', () => {
-      this.handleLogout();
-    });
-
     // 文件选择按钮点击
     this.elements.uploadBtn.addEventListener('click', () => {
       this.elements.fileInput.click();
@@ -334,9 +204,6 @@ class ImageBed {
 
     const response = await this.makeApiRequest(`${this.apiBaseUrl}/api/upload`, {
       method: 'POST',
-      headers: {
-        'X-Upload-Token': this.accessToken
-      },
       body: formData
     });
 

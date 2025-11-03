@@ -124,17 +124,9 @@ function handleOptions() {
 // 文件上传接口
 async function handleUpload(request, env) {
   try {
-    // 验证上传令牌
-    if (!validateUploadToken(request, env)) {
-      return new Response(JSON.stringify({ error: '访问被拒绝，请先登录' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
     const formData = await request.formData();
     const file = formData.get('file');
-    
+
     if (!file || !file.name) {
       return new Response(JSON.stringify({ error: '请选择要上传的文件' }), {
         status: 400,
@@ -163,7 +155,7 @@ async function handleUpload(request, env) {
     const fileId = generateFileId();
     const fileExt = getFileExtension(file.name);
     const fileName = `${fileId}${fileExt}`;
-    
+
     // 上传到R2
     await env.R2_BUCKET.put(fileName, file.stream(), {
       httpMetadata: {
@@ -178,7 +170,7 @@ async function handleUpload(request, env) {
 
     // 构建返回URL
     const fileUrl = `${new URL(request.url).origin}/api/file/${fileId}`;
-    
+
     const response = {
       success: true,
       fileId: fileId,
@@ -192,7 +184,7 @@ async function handleUpload(request, env) {
     return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-    
+
   } catch (error) {
     console.error('Upload error:', error);
     return new Response(JSON.stringify({ error: '上传失败，请重试' }), {
@@ -249,14 +241,6 @@ async function handleGetFile(request, env, fileId) {
 // 文件删除接口
 async function handleDeleteFile(request, env, fileId) {
   try {
-    // 验证上传令牌
-    if (!validateUploadToken(request, env)) {
-      return new Response(JSON.stringify({ error: '访问被拒绝，请先登录' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
     // 查找并删除文件
     const extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
     let found = false;
@@ -281,7 +265,7 @@ async function handleDeleteFile(request, env, fileId) {
     return new Response(JSON.stringify({ success: true, message: '文件已删除' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-    
+
   } catch (error) {
     console.error('Delete file error:', error);
     return new Response(JSON.stringify({ error: '删除文件失败' }), {
