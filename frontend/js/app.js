@@ -32,6 +32,7 @@ class ImageBed {
     
     this.elements = {
       authStatus: document.getElementById('authStatus'),
+      loginTriggerBtn: document.getElementById('loginTriggerBtn'),
       authUser: document.getElementById('authUser'),
       logoutBtn: document.getElementById('logoutBtn'),
       loginModal: document.getElementById('loginModal'),
@@ -148,6 +149,10 @@ class ImageBed {
 
     this.elements.logoutBtn.addEventListener('click', () => {
       this.logout();
+    });
+
+    this.elements.loginTriggerBtn.addEventListener('click', () => {
+      this.showLoginModal('请输入登录信息后继续上传。');
     });
 
     // 拖拽事件
@@ -446,7 +451,10 @@ class ImageBed {
   }
 
   applyAuthState(isAuthenticated) {
-    this.elements.authStatus.style.display = isAuthenticated ? 'flex' : 'none';
+    this.elements.authStatus.style.display = 'flex';
+    this.elements.loginTriggerBtn.style.display = isAuthenticated ? 'none' : 'inline-flex';
+    this.elements.authUser.style.display = isAuthenticated ? 'inline-flex' : 'none';
+    this.elements.logoutBtn.style.display = isAuthenticated ? 'inline-flex' : 'none';
     this.elements.authUser.textContent = isAuthenticated ? `当前用户：${this.currentUsername || '已登录'}` : '';
     this.elements.uploadArea.classList.toggle('disabled', !isAuthenticated);
     this.elements.uploadBtn.textContent = isAuthenticated ? '点击选择文件' : '登录后上传';
