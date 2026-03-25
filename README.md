@@ -9,7 +9,9 @@
 
 ## ✨ 在线体验
 
-**🔗 [立即体验图床服务](https://yangzhen-image-bed.pages.dev)**
+**🔗 [立即体验图床服务](https://19950906.xyz)**
+
+默认访问域名已切换到 `https://19950906.xyz`。如需同时启用 `https://www.19950906.xyz`，请在 Cloudflare Pages/自定义域名配置中一并绑定并验证。
 
 无需注册，打开即用！支持拖拽上传、批量处理、实时预览。
 
@@ -42,13 +44,13 @@
 <div align="center">
 
 ### 🏠 主界面
-![主界面](https://yangzhen-image-bed.pages.dev/preview/main.png)
+![主界面](https://19950906.xyz/preview/main.png)
 
 ### 📱 移动端界面
-![移动端](https://yangzhen-image-bed.pages.dev/preview/mobile.png)
+![移动端](https://19950906.xyz/preview/mobile.png)
 
 ### 📋 历史记录
-![历史记录](https://yangzhen-image-bed.pages.dev/preview/history.png)
+![历史记录](https://19950906.xyz/preview/history.png)
 
 </div>
 
@@ -103,7 +105,7 @@ bucket_name = "image-bed"  # 你的 R2 存储桶名称
 
 [vars]
 MAX_FILE_SIZE = "50"       # 最大文件大小(MB)
-ALLOWED_ORIGINS = "*"      # 允许的来源
+ALLOWED_ORIGINS = "https://19950906.xyz,https://www.19950906.xyz"  # 允许的来源
 ```
 
 ## 📁 项目结构
@@ -201,7 +203,7 @@ GET /api/health
 ```toml
 [vars]
 MAX_FILE_SIZE = "100"          # 调整最大文件大小
-ALLOWED_ORIGINS = "https://yourdomain.com"  # 限制访问来源
+ALLOWED_ORIGINS = "https://19950906.xyz,https://www.19950906.xyz"  # 限制访问来源
 ```
 
 ### 🔐 安全设置

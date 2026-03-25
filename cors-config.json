@@ -1,7 +1,10 @@
 {
   "rules": [
     {
-      "allowedOrigins": ["*"],
+      "allowedOrigins": [
+        "https://19950906.xyz",
+        "https://www.19950906.xyz"
+      ],
       "allowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
       "allowedHeaders": [
         "Accept",

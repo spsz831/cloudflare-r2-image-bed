@@ -9,13 +9,36 @@
  * @author YangZhen
  */
 
+const DEFAULT_ALLOWED_ORIGINS = [
+  'https://19950906.xyz',
+  'https://www.19950906.xyz'
+];
+
 // CORS响应头配置
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Upload-Token',
-  'Access-Control-Max-Age': '86400',
-};
+function getAllowedOrigins(env) {
+  const configuredOrigins = (env.ALLOWED_ORIGINS || DEFAULT_ALLOWED_ORIGINS.join(','))
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean);
+
+  return configuredOrigins.length > 0 ? configuredOrigins : DEFAULT_ALLOWED_ORIGINS;
+}
+
+function getCorsHeaders(request, env) {
+  const origin = request.headers.get('Origin');
+  const headers = {
+    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Upload-Token',
+    'Access-Control-Max-Age': '86400',
+    'Vary': 'Origin',
+  };
+
+  if (origin && getAllowedOrigins(env).includes(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin;
+  }
+
+  return headers;
+}
 
 // 支持的图片类型
 const SUPPORTED_IMAGE_TYPES = [
@@ -168,7 +191,7 @@ function isValidImageType(contentType) {
 }
 
 // 创建错误响应
-function createErrorResponse(errorCode, message, statusCode = 400, details = {}) {
+function createErrorResponse(request, env, errorCode, message, statusCode = 400, details = {}) {
   const errorResponse = {
     success: false,
     error: message,
@@ -182,7 +205,7 @@ function createErrorResponse(errorCode, message, statusCode = 400, details = {})
   return new Response(JSON.stringify(errorResponse), {
     status: statusCode,
     headers: {
-      ...corsHeaders,
+      ...getCorsHeaders(request, env),
       'Content-Type': 'application/json',
       'Cache-Control': CACHE_CONTROL.ERROR
     },
@@ -190,7 +213,7 @@ function createErrorResponse(errorCode, message, statusCode = 400, details = {})
 }
 
 // 创建成功响应
-function createSuccessResponse(data, statusCode = 200) {
+function createSuccessResponse(request, env, data, statusCode = 200) {
   const response = {
     success: true,
     timestamp: new Date().toISOString(),
@@ -199,7 +222,7 @@ function createSuccessResponse(data, statusCode = 200) {
 
   return new Response(JSON.stringify(response), {
     status: statusCode,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...getCorsHeaders(request, env), 'Content-Type': 'application/json' },
   });
 }
 
@@ -226,11 +249,15 @@ function formatFileSize(bytes) {
 }
 
 // 处理CORS预检请求
-function handleOptions() {
-  return new Response(null, {
-    status: 200,
-    headers: corsHeaders,
-  });
+function handleOptions(request, env) {
+  const origin = request.headers.get('Origin');
+  const corsHeaders = getCorsHeaders(request, env);
+
+  if (origin && !corsHeaders['Access-Control-Allow-Origin']) {
+    return new Response(null, { status: 403, headers: corsHeaders });
+  }
+
+  return new Response(null, { status: 200, headers: corsHeaders });
 }
 
 // 文件上传接口
@@ -247,6 +274,8 @@ async function handleUpload(request, env) {
     // 验证文件存在
     if (!file || !file.name) {
       return createErrorResponse(
+        request,
+        env,
         ERROR_CODES.INVALID_FILE,
         '请选择要上传的文件',
         400,
@@ -257,6 +286,8 @@ async function handleUpload(request, env) {
     // 验证文件类型
     if (!isValidImageType(file.type)) {
       return createErrorResponse(
+        request,
+        env,
         ERROR_CODES.UNSUPPORTED_TYPE,
         `不支持的文件类型: ${file.type}，请上传图片文件`,
         400,
@@ -268,6 +299,8 @@ async function handleUpload(request, env) {
     const maxSize = (env.MAX_FILE_SIZE || 50) * 1024 * 1024;
     if (!validateFileSize(file.size, maxSize)) {
       return createErrorResponse(
+        request,
+        env,
         ERROR_CODES.FILE_TOO_LARGE,
         `文件大小超过限制: ${formatFileSize(file.size)}, 最大允许: ${formatFileSize(maxSize)}`,
         400,
@@ -330,7 +363,7 @@ async function handleUpload(request, env) {
       processingTime
     });
 
-    return createSuccessResponse(responseData);
+    return createSuccessResponse(request, env, responseData);
 
   } catch (error) {
     const processingTime = Date.now() - startTime;
@@ -343,6 +376,8 @@ async function handleUpload(request, env) {
     });
 
     return createErrorResponse(
+      request,
+      env,
       ERROR_CODES.UPLOAD_FAILED,
       '上传失败，请重试',
       500,
@@ -375,6 +410,8 @@ async function handleGetFile(request, env, fileId) {
     if (!object) {
       log(LOG_LEVELS.WARN, '文件不存在', { clientIP, fileId });
       return createErrorResponse(
+        request,
+        env,
         ERROR_CODES.FILE_NOT_FOUND,
         '文件不存在',
         404,
@@ -393,7 +430,7 @@ async function handleGetFile(request, env, fileId) {
 
     // 返回文件内容
     const headers = {
-      ...corsHeaders,
+      ...getCorsHeaders(request, env),
       'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
       'Cache-Control': CACHE_CONTROL.IMAGE,
       'Content-Disposition': `inline; filename="${object.customMetadata?.originalName || fileName}"`,
@@ -413,6 +450,8 @@ async function handleGetFile(request, env, fileId) {
     });
 
     return createErrorResponse(
+      request,
+      env,
       ERROR_CODES.INTERNAL_ERROR,
       '获取文件失败',
       500,
@@ -452,6 +491,8 @@ async function handleDeleteFile(request, env, fileId) {
     if (!found) {
       log(LOG_LEVELS.WARN, '要删除的文件不存在', { clientIP, fileId });
       return createErrorResponse(
+        request,
+        env,
         ERROR_CODES.FILE_NOT_FOUND,
         '文件不存在',
         404,
@@ -459,7 +500,7 @@ async function handleDeleteFile(request, env, fileId) {
       );
     }
 
-    return createSuccessResponse({
+    return createSuccessResponse(request, env, {
       message: '文件已删除',
       fileId,
       fileName: deletedFileName
@@ -474,6 +515,8 @@ async function handleDeleteFile(request, env, fileId) {
     });
 
     return createErrorResponse(
+      request,
+      env,
       ERROR_CODES.INTERNAL_ERROR,
       '删除文件失败',
       500,
@@ -514,14 +557,14 @@ async function handleListFiles(request, env) {
     };
 
     return new Response(JSON.stringify(response), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...getCorsHeaders(request, env), 'Content-Type': 'application/json' },
     });
     
   } catch (error) {
     console.error('List files error:', error);
     return new Response(JSON.stringify({ error: '获取文件列表失败' }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...getCorsHeaders(request, env), 'Content-Type': 'application/json' },
     });
   }
 }
@@ -535,7 +578,7 @@ export default {
 
     // 处理CORS预检请求
     if (method === 'OPTIONS') {
-      return handleOptions();
+      return handleOptions(request, env);
     }
 
     // 路由处理
@@ -555,7 +598,7 @@ export default {
         } else {
           return new Response(JSON.stringify({ error: '请提供用户名和密码或仅密码' }), {
             status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            headers: { ...getCorsHeaders(request, env), 'Content-Type': 'application/json' },
           });
         }
         
@@ -566,18 +609,18 @@ export default {
             username: result.username,
             message: '登录成功'
           }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            headers: { ...getCorsHeaders(request, env), 'Content-Type': 'application/json' },
           });
         } else {
           return new Response(JSON.stringify({ error: result.error }), {
             status: 401,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            headers: { ...getCorsHeaders(request, env), 'Content-Type': 'application/json' },
           });
         }
       } catch (error) {
         return new Response(JSON.stringify({ error: '请求格式错误' }), {
           status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...getCorsHeaders(request, env), 'Content-Type': 'application/json' },
         });
       }
     }
@@ -589,7 +632,7 @@ export default {
         valid: isValid,
         message: isValid ? '令牌有效' : '令牌无效'
       }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...getCorsHeaders(request, env), 'Content-Type': 'application/json' },
       });
     }
 
@@ -614,14 +657,14 @@ export default {
     // 健康检查
     if (path === '/api/health') {
       return new Response(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...getCorsHeaders(request, env), 'Content-Type': 'application/json' },
       });
     }
 
     // 404处理
     return new Response(JSON.stringify({ error: 'API接口不存在' }), {
       status: 404,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...getCorsHeaders(request, env), 'Content-Type': 'application/json' },
     });
   },
 };

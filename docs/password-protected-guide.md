@@ -3,7 +3,7 @@
 ## 🔐 访问信息
 
 ### 图床地址
-**https://639dc79c.image-bed-frontend.pages.dev**
+**https://19950906.xyz**
 
 ### 登录密码
 **yang**
@@ -28,7 +28,7 @@
 
 ### 4. 获取链接
 上传完成后可以复制三种格式：
-- **直链**：`https://image-bed-worker.yangzhen0806.workers.dev/api/file/xxx`
+- **直链**：`https://19950906.xyz/api/file/xxx`
 - **Markdown**：`![filename](url)`
 - **HTML**：`<img src="url" alt="filename" />`
 
@@ -76,12 +76,12 @@
 
 ```bash
 # 登录获取令牌
-curl -X POST https://image-bed-worker.yangzhen0806.workers.dev/api/login \
+curl -X POST https://19950906.xyz/api/login \
   -H "Content-Type: application/json" \
   -d '{"password":"yang"}'
 
 # 使用令牌上传文件
-curl -X POST https://image-bed-worker.yangzhen0806.workers.dev/api/upload \
+curl -X POST https://19950906.xyz/api/upload \
   -H "X-Upload-Token: YOUR_TOKEN" \
   -F "file=@/path/to/image.jpg"
 ```

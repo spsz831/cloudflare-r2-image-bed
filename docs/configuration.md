@@ -9,7 +9,7 @@
 MAX_FILE_SIZE = "50"
 
 # 允许的来源（CORS）
-ALLOWED_ORIGINS = "*"
+ALLOWED_ORIGINS = "https://19950906.xyz,https://www.19950906.xyz"
 
 # 支持的文件类型（可选）
 ALLOWED_TYPES = "image/jpeg,image/png,image/gif,image/webp,image/svg+xml"
@@ -25,7 +25,7 @@ ALLOWED_TYPES = "image/jpeg,image/png,image/gif,image/webp,image/svg+xml"
 | 变量名 | 值 | 说明 |
 |--------|----|----- |
 | MAX_FILE_SIZE | 50 | 最大文件大小(MB) |
-| ALLOWED_ORIGINS | * | 允许的来源 |
+| ALLOWED_ORIGINS | https://19950906.xyz,https://www.19950906.xyz | 允许的来源 |
 | ADMIN_TOKEN | your-secret-token | 管理员令牌（可选）|
 
 ### 方式3：通过 Wrangler CLI 配置
@@ -66,7 +66,7 @@ constructor() {
   // this.apiBaseUrl = 'http://localhost:8787';
   
   // 生产环境 - 替换为你的Worker URL
-  this.apiBaseUrl = 'https://your-worker.your-subdomain.workers.dev';
+  this.apiBaseUrl = 'https://19950906.xyz';
   
   // 或者使用自定义域名
   // this.apiBaseUrl = 'https://api.yourdomain.com';
@@ -115,7 +115,7 @@ const cacheHeaders = {
 export default {
   async fetch(request, env, ctx) {
     const maxFileSize = (env.MAX_FILE_SIZE || 50) * 1024 * 1024;
-    const allowedOrigins = env.ALLOWED_ORIGINS || '*';
+    const allowedOrigins = env.ALLOWED_ORIGINS || 'https://19950906.xyz,https://www.19950906.xyz';
     const adminToken = env.ADMIN_TOKEN;
     
     // 使用环境变量...

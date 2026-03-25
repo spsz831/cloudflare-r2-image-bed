@@ -44,7 +44,7 @@ wrangler r2 bucket list
 ```json
 [
   {
-    "AllowedOrigins": ["*"],
+    "AllowedOrigins": ["https://19950906.xyz", "https://www.19950906.xyz"],
     "AllowedMethods": ["GET", "PUT", "POST", "DELETE"],
     "AllowedHeaders": ["*"],
     "ExposeHeaders": [],
@@ -73,7 +73,7 @@ bucket_name = "image-bed"  # 你的实际存储桶名称
 
 [vars]
 MAX_FILE_SIZE = "50"
-ALLOWED_ORIGINS = "*"
+ALLOWED_ORIGINS = "https://19950906.xyz,https://www.19950906.xyz"
 ```
 
 ### 4.2 部署Worker
@@ -107,7 +107,7 @@ wrangler deploy
 cd frontend
 
 # 修改 js/app.js 中的 apiBaseUrl
-# this.apiBaseUrl = 'https://image-bed-worker.your-username.workers.dev';
+# this.apiBaseUrl = 'https://19950906.xyz';
 
 # 部署
 wrangler pages deploy . --project-name image-bed-frontend
@@ -126,7 +126,7 @@ wrangler pages deploy . --project-name image-bed-frontend
 ```toml
 [vars]
 MAX_FILE_SIZE = "50"          # 最大文件大小(MB)
-ALLOWED_ORIGINS = "*"         # 允许的来源
+ALLOWED_ORIGINS = "https://19950906.xyz,https://www.19950906.xyz"         # 允许的来源
 ```
 
 ### 6.2 通过CLI配置
@@ -147,10 +147,10 @@ wrangler secret put ADMIN_TOKEN
 ### 7.1 测试API端点
 ```bash
 # 健康检查
-curl https://your-worker-url.workers.dev/api/health
+curl https://19950906.xyz/api/health
 
 # 获取文件列表
-curl https://your-worker-url.workers.dev/api/list
+curl https://19950906.xyz/api/list
 ```
 
 ### 7.2 测试前端

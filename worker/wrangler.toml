@@ -11,5 +11,5 @@ bucket_name = "image-bed"
 # 环境变量
 [vars]
 MAX_FILE_SIZE = "50"  # MB
-ALLOWED_ORIGINS = "*"
+ALLOWED_ORIGINS = "https://19950906.xyz,https://www.19950906.xyz"
 UPLOAD_PASSWORD = "yang"  # 登录密码

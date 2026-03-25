@@ -5,7 +5,7 @@
 您的图床现已升级为专业的 Apple 设计风格，并融入了 YangZhen 个人品牌标识！
 
 ### 🆕 新的访问地址
-**https://7eebea85.image-bed-frontend.pages.dev**
+**https://19950906.xyz**
 **登录密码：yang**
 
 ## ✨ Apple 风格设计特性
@@ -112,5 +112,5 @@
 
 **🎉 升级完成！现在您拥有了一个真正专业级的 Apple 风格图床服务！**
 
-**访问地址**：https://7eebea85.image-bed-frontend.pages.dev  
+**访问地址**：https://19950906.xyz  
 **登录密码**：yang

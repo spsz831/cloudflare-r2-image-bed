@@ -1,7 +1,7 @@
 # 团队图床使用指南
 
 ## 📸 图床地址
-**https://00307e36.image-bed-frontend.pages.dev**
+**https://19950906.xyz**
 
 ## 🚀 如何使用
 

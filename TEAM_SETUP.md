@@ -7,6 +7,9 @@
 - 使用密码 `yang` 登录
 - 上传图片并获取链接
 
+当前正式入口建议统一使用 `https://19950906.xyz`。
+如需兼容裸域和 `www`，建议同时绑定 `https://www.19950906.xyz` 并做 301 或 Cloudflare 侧跳转策略。
+
 ### 2. **部署步骤**
 
 #### 后端部署 (Cloudflare Workers)
@@ -61,8 +64,8 @@ admin:yang,张三:zhang123,李四:li456,设计师:design789
 ### 方案三：域名分发
 
 **为团队成员提供专用访问链接**:
-- 主管理员: `https://yangzhen-image-bed.pages.dev`
-- 团队成员: `https://your-custom-domain.com`
+- 主入口: `https://19950906.xyz`
+- 兼容入口: `https://www.19950906.xyz`
 
 ---
 
