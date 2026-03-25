@@ -13,8 +13,8 @@
 class ImageBed {
   constructor() {
     // API配置
-    this.apiBaseUrl = 'https://api.yz-image.com'; // EdgeOne加速API域名
-    this.fallbackApiUrl = 'https://19950906.xyz'; // 备用正式域名
+    this.apiBaseUrl = 'https://image-bed-worker.yangzhen0806.workers.dev'; // 生产 Worker API 域名
+    this.fallbackApiUrl = 'https://image-bed-worker.yangzhen0806.workers.dev'; // 备用 Worker API 域名
 
     // 文件限制配置
     this.maxFileSize = 50 * 1024 * 1024; // 50MB

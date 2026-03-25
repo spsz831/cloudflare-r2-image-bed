@@ -1,26 +1,26 @@
 {
   "rules": [
     {
-      "allowedOrigins": [
+      "allowed_origins": [
         "https://19950906.xyz",
         "https://www.19950906.xyz"
       ],
-      "allowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
-      "allowedHeaders": [
+      "allowed_methods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
+      "allowed_headers": [
         "Accept",
-        "Accept-Language", 
+        "Accept-Language",
         "Content-Language",
         "Content-Type",
         "Authorization",
         "X-Requested-With"
       ],
-      "exposeHeaders": [
+      "expose_headers": [
         "Content-Length",
         "Content-Type",
         "Last-Modified",
         "ETag"
       ],
-      "maxAgeSeconds": 3600
+      "max_age_seconds": 3600
     }
   ]
 }
