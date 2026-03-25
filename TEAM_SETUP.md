@@ -4,7 +4,7 @@
 
 ### 1. **个人使用**
 - 访问您的图床网站
-- 使用密码 `yang` 登录
+- 使用你配置的上传密码登录
 - 上传图片并获取链接
 
 当前正式入口建议统一使用 `https://19950906.xyz`。
@@ -37,7 +37,7 @@ wrangler pages deploy . --project-name yangzhen-image-bed
 ```bash
 # 修改为团队密码
 wrangler secret put UPLOAD_PASSWORD
-# 输入: team2024
+# 输入: your-team-password
 ```
 
 ### 方案二：多用户系统 (推荐，已实现)
@@ -49,7 +49,7 @@ wrangler secret put UPLOAD_PASSWORD
 ```bash
 # 设置多用户配置
 wrangler secret put UPLOAD_USERS
-# 输入格式: admin:yang,user1:pass1,user2:pass2,designer:design123
+# 输入格式: admin:your-password,user1:pass1,user2:pass2,designer:design123
 ```
 
 **登录方式**:
@@ -58,7 +58,7 @@ wrangler secret put UPLOAD_USERS
 
 **示例用户配置**:
 ```
-admin:yang,张三:zhang123,李四:li456,设计师:design789
+admin:your-password,张三:zhang123,李四:li456,设计师:design789
 ```
 
 ### 方案三：域名分发

@@ -6,14 +6,14 @@
 **https://19950906.xyz**
 
 ### 登录密码
-**yang**
+**使用你在 Cloudflare 中配置的上传密码**
 
 ## 🚀 使用说明
 
 ### 1. 首次访问
 - 打开图床地址
 - 系统会显示登录界面
-- 输入密码：`yang`
+- 输入你配置的登录密码
 - 点击"登录"按钮
 
 ### 2. 成功登录后
@@ -78,7 +78,7 @@
 # 登录获取令牌
 curl -X POST https://19950906.xyz/api/login \
   -H "Content-Type: application/json" \
-  -d '{"password":"yang"}'
+  -d '{"password":"your-password"}'
 
 # 使用令牌上传文件
 curl -X POST https://19950906.xyz/api/upload \

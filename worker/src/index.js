@@ -90,8 +90,8 @@ function log(level, message, data = {}) {
 
 // 支持多用户的用户列表
 function getValidUsers(env) {
-  // 支持多用户配置格式: "user1:pass1,user2:pass2,admin:yang"
-  const userConfig = env.UPLOAD_USERS || env.UPLOAD_PASSWORD || 'admin:yang';
+  // 支持多用户配置格式: "user1:pass1,user2:pass2,admin:your-password"
+  const userConfig = env.UPLOAD_USERS || env.UPLOAD_PASSWORD || '';
   
   if (userConfig.includes(':')) {
     const users = {};
@@ -104,7 +104,7 @@ function getValidUsers(env) {
     return users;
   } else {
     // 兼容单密码模式
-    return { admin: userConfig };
+    return userConfig ? { admin: userConfig } : {};
   }
 }
 

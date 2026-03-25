@@ -13,8 +13,8 @@
 class ImageBed {
   constructor() {
     // API配置
-    this.apiBaseUrl = 'https://image-bed-worker.yangzhen0806.workers.dev'; // 生产 Worker API 域名
-    this.fallbackApiUrl = 'https://image-bed-worker.yangzhen0806.workers.dev'; // 备用 Worker API 域名
+    this.apiBaseUrl = window.location.origin; // 同域 API 域名
+    this.fallbackApiUrl = window.location.origin; // 同域备用 API 域名
 
     // 文件限制配置
     this.maxFileSize = 50 * 1024 * 1024; // 50MB
