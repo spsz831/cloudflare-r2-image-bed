@@ -60,6 +60,7 @@ const CACHE_CONTROL = {
 
 // 错误码定义
 const ERROR_CODES = {
+  UNAUTHORIZED: 'UNAUTHORIZED',
   INVALID_FILE: 'INVALID_FILE',
   FILE_TOO_LARGE: 'FILE_TOO_LARGE',
   UNSUPPORTED_TYPE: 'UNSUPPORTED_TYPE',
@@ -637,6 +638,16 @@ export default {
     }
 
     if (path === '/api/upload' && method === 'POST') {
+      if (!validateUploadToken(request, env)) {
+        return createErrorResponse(
+          request,
+          env,
+          ERROR_CODES.UNAUTHORIZED,
+          '请先登录后再上传图片',
+          401
+        );
+      }
+
       return handleUpload(request, env);
     }
     

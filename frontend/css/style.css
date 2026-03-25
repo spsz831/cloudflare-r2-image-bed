@@ -92,6 +92,20 @@ body {
   position: absolute;
   top: 20px;
   right: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.auth-user {
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.8);
+  color: #1d1d1f;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  backdrop-filter: blur(20px);
 }
 
 .logout-btn {
@@ -348,6 +362,20 @@ body {
   border-color: #10B981;
   transform: scale(1.02);
   box-shadow: 0 20px 60px rgba(16, 185, 129, 0.2);
+}
+
+.upload-area.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: none;
+  transform: none;
+}
+
+.upload-area.disabled:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: rgba(0, 0, 0, 0.08);
 }
 
 .upload-content {
@@ -856,6 +884,8 @@ body {
   .auth-status {
     position: static;
     margin-top: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
   }
   
   .footer-content {

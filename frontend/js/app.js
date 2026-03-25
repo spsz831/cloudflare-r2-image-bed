@@ -15,6 +15,8 @@ class ImageBed {
     // API配置
     this.apiBaseUrl = window.location.origin; // 同域 API 域名
     this.fallbackApiUrl = window.location.origin; // 同域备用 API 域名
+    this.tokenStorageKey = 'imageBedAccessToken';
+    this.userStorageKey = 'imageBedUsername';
 
     // 文件限制配置
     this.maxFileSize = 50 * 1024 * 1024; // 50MB
@@ -25,8 +27,19 @@ class ImageBed {
     // 状态管理
     this.isUploading = false;
     this.uploadQueue = [];
+    this.accessToken = localStorage.getItem(this.tokenStorageKey) || '';
+    this.currentUsername = localStorage.getItem(this.userStorageKey) || '';
     
     this.elements = {
+      authStatus: document.getElementById('authStatus'),
+      authUser: document.getElementById('authUser'),
+      logoutBtn: document.getElementById('logoutBtn'),
+      loginModal: document.getElementById('loginModal'),
+      loginForm: document.getElementById('loginForm'),
+      loginBtn: document.getElementById('loginBtn'),
+      usernameInput: document.getElementById('usernameInput'),
+      passwordInput: document.getElementById('passwordInput'),
+      loginMessage: document.getElementById('loginMessage'),
       uploadArea: document.getElementById('uploadArea'),
       fileInput: document.getElementById('fileInput'),
       uploadBtn: document.getElementById('uploadBtn'),
@@ -43,6 +56,7 @@ class ImageBed {
 
     this.initializeEventListeners();
     this.loadUploadHistory();
+    this.initializeAuth();
   }
 
   // 带容错和重试的API请求方法
@@ -110,11 +124,13 @@ class ImageBed {
   initializeEventListeners() {
     // 文件选择按钮点击
     this.elements.uploadBtn.addEventListener('click', () => {
+      if (!this.ensureAuthenticated()) return;
       this.elements.fileInput.click();
     });
 
     // 整个上传区域点击
     this.elements.uploadArea.addEventListener('click', (e) => {
+      if (!this.ensureAuthenticated()) return;
       if (e.target !== this.elements.uploadBtn) {
         this.elements.fileInput.click();
       }
@@ -123,6 +139,15 @@ class ImageBed {
     // 文件选择变化
     this.elements.fileInput.addEventListener('change', (e) => {
       this.handleFileSelect(e.target.files);
+    });
+
+    this.elements.loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.handleLogin();
+    });
+
+    this.elements.logoutBtn.addEventListener('click', () => {
+      this.logout();
     });
 
     // 拖拽事件
@@ -154,6 +179,7 @@ class ImageBed {
   // 处理文件拖拽放下
   handleDrop(e) {
     e.preventDefault();
+    if (!this.ensureAuthenticated()) return;
     this.elements.uploadArea.classList.remove('dragover');
     const files = Array.from(e.dataTransfer.files);
     this.handleFileSelect(files);
@@ -162,6 +188,7 @@ class ImageBed {
   // 处理文件选择
   async handleFileSelect(files) {
     if (!files || files.length === 0) return;
+    if (!this.ensureAuthenticated()) return;
 
     // 防止重复上传
     if (this.isUploading) {
@@ -287,6 +314,7 @@ class ImageBed {
     try {
       const response = await this.makeApiRequest(`${this.apiBaseUrl}/api/upload`, {
         method: 'POST',
+        headers: this.getAuthHeaders(),
         body: formData
       });
 
@@ -298,6 +326,10 @@ class ImageBed {
         } catch {
           errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
         }
+        if (response.status === 401) {
+          this.clearAuth();
+          this.showLoginModal('登录状态已失效，请重新登录后上传。', 'error');
+        }
         throw new Error(errorData.error || '上传失败');
       }
 
@@ -307,6 +339,137 @@ class ImageBed {
       console.error('上传失败:', error);
       throw new Error(`上传失败: ${error.message}`);
     }
+  }
+
+  async initializeAuth() {
+    if (!this.accessToken) {
+      this.applyAuthState(false);
+      this.showLoginModal('请先登录后再上传图片。');
+      return;
+    }
+
+    const isValid = await this.verifyToken(this.accessToken);
+    if (isValid) {
+      this.applyAuthState(true);
+      return;
+    }
+
+    this.clearAuth();
+    this.showLoginModal('登录已过期，请重新登录。', 'error');
+  }
+
+  ensureAuthenticated() {
+    if (this.accessToken) return true;
+
+    this.showLoginModal('请先登录后再上传图片。');
+    return false;
+  }
+
+  getAuthHeaders() {
+    return this.accessToken ? { 'X-Upload-Token': this.accessToken } : {};
+  }
+
+  async handleLogin() {
+    const username = this.elements.usernameInput.value.trim();
+    const password = this.elements.passwordInput.value.trim();
+
+    if (!password) {
+      this.setLoginMessage('请输入上传密码。', 'error');
+      return;
+    }
+
+    this.elements.loginBtn.disabled = true;
+    this.setLoginMessage('正在登录...', 'info');
+
+    try {
+      const payload = username ? { username, password } : { password };
+      const response = await this.makeApiRequest(`${this.apiBaseUrl}/api/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.token) {
+        throw new Error(result.error || '登录失败');
+      }
+
+      this.accessToken = result.token;
+      this.currentUsername = result.username || username || '已登录用户';
+      localStorage.setItem(this.tokenStorageKey, this.accessToken);
+      localStorage.setItem(this.userStorageKey, this.currentUsername);
+      this.applyAuthState(true);
+      this.elements.passwordInput.value = '';
+      this.setLoginMessage('登录成功，已解锁上传功能。', 'success');
+      setTimeout(() => this.hideLoginModal(), 300);
+      this.showToast('登录成功');
+    } catch (error) {
+      this.clearAuth();
+      this.setLoginMessage(error.message || '登录失败，请重试。', 'error');
+    } finally {
+      this.elements.loginBtn.disabled = false;
+    }
+  }
+
+  async verifyToken(token) {
+    try {
+      const response = await this.makeApiRequest(`${this.apiBaseUrl}/api/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Upload-Token': token
+        },
+        body: '{}'
+      });
+
+      if (!response.ok) return false;
+      const result = await response.json();
+      return Boolean(result.valid);
+    } catch (error) {
+      console.error('Token verification failed:', error);
+      return false;
+    }
+  }
+
+  logout() {
+    this.clearAuth();
+    this.showLoginModal('已退出登录，请重新登录后上传。');
+    this.showToast('已退出登录', 'info');
+  }
+
+  clearAuth() {
+    this.accessToken = '';
+    this.currentUsername = '';
+    localStorage.removeItem(this.tokenStorageKey);
+    localStorage.removeItem(this.userStorageKey);
+    this.applyAuthState(false);
+  }
+
+  applyAuthState(isAuthenticated) {
+    this.elements.authStatus.style.display = isAuthenticated ? 'flex' : 'none';
+    this.elements.authUser.textContent = isAuthenticated ? `当前用户：${this.currentUsername || '已登录'}` : '';
+    this.elements.uploadArea.classList.toggle('disabled', !isAuthenticated);
+    this.elements.uploadBtn.textContent = isAuthenticated ? '点击选择文件' : '登录后上传';
+    this.elements.fileInput.disabled = !isAuthenticated;
+
+    if (isAuthenticated) {
+      this.hideLoginModal();
+      this.setLoginMessage('');
+    }
+  }
+
+  showLoginModal(message = '', type = 'info') {
+    this.elements.loginModal.style.display = 'flex';
+    this.setLoginMessage(message, type);
+  }
+
+  hideLoginModal() {
+    this.elements.loginModal.style.display = 'none';
+  }
+
+  setLoginMessage(message, type = 'info') {
+    this.elements.loginMessage.textContent = message;
+    this.elements.loginMessage.className = `login-message${message ? ` ${type}` : ''}`;
   }
 
   // 显示上传进度
